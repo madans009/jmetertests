@@ -1,48 +1,23 @@
 pipeline {
     agent any
-
-    environment {
-        JMETER_HOME = "/opt/apache-jmeter-5.6.3"  // Update this path as per your Jenkins setup
-        JMETER_TEST = "tests/sample-test.jmx"     // Relative path to your JMeter script in repo
-        REPORT_DIR  = "reports"
-    }
-
     stages {
-
-        stage('Checkout from Git') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'
+                git url: 'https://github.com/madans009/jmetertests.git', branch: 'main'
             }
         }
-
         stage('Run JMeter Test') {
+            agent {
+                docker { image 'justb4/jmeter:5.7.2' }
+            }
             steps {
-                echo "Running JMeter test: ${JMETER_TEST}"
-                sh '''
-                    mkdir -p ${REPORT_DIR}
-                    ${JMETER_HOME}/bin/jmeter -n -t ${JMETER_TEST} -l ${REPORT_DIR}/results.jtl -e -o ${REPORT_DIR}/html
-                '''
+                sh 'jmeter -n -t testplans/testplan.jmx -l result.jtl -e -o report'
             }
         }
-
-        stage('Publish HTML Report') {
+        stage('Archive Report') {
             steps {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: "${REPORT_DIR}/html",
-                    reportFiles: 'index.html',
-                    reportName: "JMeter HTML Report"
-                ])
+                archiveArtifacts artifacts: 'report/**', fingerprint: true
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Cleaning workspace...'
-            deleteDir()
         }
     }
 }
