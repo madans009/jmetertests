@@ -1,23 +1,48 @@
 pipeline {
     agent any
+
+    environment {
+        TESTPLAN = "${WORKSPACE}/testplans/testplan.jmx"
+        RESULTS = "${WORKSPACE}/testplans/result.jtl"
+        REPORT = "${WORKSPACE}/testplans/report"
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Clean Previous Results') {
             steps {
-                git url: 'https://github.com/madans009/jmetertests.git', branch: 'main'
+                sh '''
+                    rm -rf $RESULTS
+                    rm -rf $REPORT
+                    mkdir -p $REPORT
+                '''
             }
         }
+
         stage('Run JMeter Test') {
-            agent {
-                docker { image 'justb4/jmeter:5.7.2' }
-            }
             steps {
-                sh 'jmeter -n -t testplans/testplan.jmx -l result.jtl -e -o report'
+                sh '''
+                    jmeter -n -t $TESTPLAN -l $RESULTS -e -o $REPORT
+                '''
             }
         }
-        stage('Archive Report') {
+
+        stage('Publish Report') {
             steps {
-                archiveArtifacts artifacts: 'report/**', fingerprint: true
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'testplans/report',
+                    reportFiles: 'index.html',
+                    reportName: 'JMeter Test Report'
+                ])
             }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'testplans/result.jtl', allowEmptyArchive: true
         }
     }
 }

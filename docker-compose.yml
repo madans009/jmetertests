@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   jenkins:
-    image: jenkins/jenkins:lts-jdk17
+    image: jenkins-with-jmeter
     container_name: jenkins
     user: "1000:1000"
     restart: unless-stopped
@@ -12,3 +12,5 @@ services:
     volumes:
       - ./jenkins_home:/var/jenkins_home
       - ./jenkins_home/workspace:/var/jenkins_home/workspace
+      - /var/run/docker.sock:/var/run/docker.sock  # gives Jenkins access to host Docker
+      - /usr/bin/docker:/usr/bin/docker            # Docker CLI inside Jenkins container
