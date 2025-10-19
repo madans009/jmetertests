@@ -21,7 +21,7 @@ pipeline {
         stage('Run JMeter Test') {
             steps {
                 sh '''
-                    jmeter -n -t $TESTPLAN -l $RESULTS -e -o $REPORT
+                    /opt/jmeter/bin/jmeter -n -t $TESTPLAN -l $RESULTS -e -o $REPORT
                 '''
             }
         }
